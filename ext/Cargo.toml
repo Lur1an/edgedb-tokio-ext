@@ -13,3 +13,7 @@ edgedb-protocol = "0.6.0"
 edgedb-tokio = "0.5.0"
 serde = "1.0.199"
 serde_json = "1.0.116"
+edgedb-tokio-ext-derive = { path = "../ext-derive" }
+
+[dev-dependencies]
+tokio = { version = "1.37.0", features = ["full"] }
