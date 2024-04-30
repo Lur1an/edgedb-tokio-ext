@@ -1,14 +1,14 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens, TokenStreamExt};
 use syn::{parse_macro_input, Attribute, Data, DeriveInput, LitStr};
 
 #[derive(Debug)]
 struct Projection<'a> {
     field_name: &'a syn::Ident,
     projection_type: ProjectionType,
-    nested_projection: Option<&'a syn::Ident>,
+    nested_projection_type: Option<&'a syn::Ident>,
 }
 
 #[derive(Debug)]
@@ -18,9 +18,38 @@ enum ProjectionType {
     Expression(String),
 }
 
-impl<'a> Projection<'a> {
-    fn format(&self) -> String {
-        todo!()
+impl<'a> ToTokens for Projection<'a> {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        match &self.projection_type {
+            ProjectionType::FieldName => {
+                if let Some(t) = self.nested_projection_type {
+                    let left = format!("{} := .{}", self.field_name, self.field_name);
+                    quote! {
+                        const_format::concatcp!(#left, " { ", #t::project(), " }, ")
+                    }
+                    .to_tokens(tokens);
+                } else {
+                    let projection = format!("{}, ", self.field_name);
+                    quote! { #projection }.to_tokens(tokens)
+                }
+            }
+            ProjectionType::Expression(exp) => {
+                let projection = format!("{} := {}, ", self.field_name, exp);
+                quote! { #projection }.to_tokens(tokens)
+            }
+            ProjectionType::Alias(alias) => {
+                if let Some(t) = self.nested_projection_type {
+                    let left = format!("{} := .{}", self.field_name, alias);
+                    quote! {
+                        const_format::concatcp!(#left, " { ", #t::project(), " }, ")
+                    }
+                    .to_tokens(tokens);
+                } else {
+                    let projection = format!("{} := .{}, ", self.field_name, alias);
+                    quote! { #projection }.to_tokens(tokens)
+                }
+            }
+        }
     }
 }
 
@@ -81,21 +110,20 @@ fn derive_projection(input: DeriveInput) -> proc_macro2::TokenStream {
         projections.push(Projection {
             field_name,
             projection_type: projection_type.unwrap_or(ProjectionType::FieldName),
-            nested_projection,
+            nested_projection_type: nested_projection,
         });
     }
-    println!("{:?}", projections);
     let code = quote! {
-        impl edgedb_tokio_ext::QueryProjection for #name {
-            fn project() -> &'static str {
-                "SELECT 1"
+        impl #name {
+            const fn project() -> &'static str {
+                const_format::concatcp!(#(#projections),*)
             }
         }
     };
     code
 }
 
-#[proc_macro_derive(Project, attributes(project))]
+#[proc_macro_derive(Project, attributes(project, nested))]
 pub fn derive_projection_macro(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     derive_projection(input).into()
@@ -133,5 +161,6 @@ mod test {
 
         let derive_input: DeriveInput = syn::parse2(input).unwrap();
         let output = derive_projection(derive_input);
+        println!("{}", output);
     }
 }
