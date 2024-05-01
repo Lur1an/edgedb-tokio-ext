@@ -1,7 +1,5 @@
-use const_format::concatcp;
 use edgedb_derive::Queryable;
-use edgedb_tokio_ext::QueryProjection;
-use edgedb_tokio_ext_derive::{query_project, Project};
+use edgedb_tokio_ext_derive::Project;
 use uuid::Uuid;
 
 #[derive(Project, Queryable)]
@@ -10,7 +8,6 @@ struct User {
     name: String,
     #[project(alias = "age")]
     age_value: i64,
-    #[nested]
     #[project(alias = "org")]
     organization: Organization,
 }
@@ -18,7 +15,6 @@ struct User {
 #[derive(Project, Queryable)]
 struct Organization {
     users: Vec<User>,
-    #[nested]
     deez: Deez,
 }
 

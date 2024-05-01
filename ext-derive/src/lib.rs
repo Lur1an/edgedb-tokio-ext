@@ -1,8 +1,10 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens, TokenStreamExt};
-use syn::{parse_macro_input, Attribute, Data, DeriveInput, LitStr};
+use quote::{quote, ToTokens};
+use syn::{
+    parse_macro_input, Data, DeriveInput, GenericArgument, LitStr, PathArguments, Type, TypePath,
+};
 
 #[derive(Debug)]
 struct Projection<'a> {
@@ -53,31 +55,6 @@ impl<'a> ToTokens for Projection<'a> {
     }
 }
 
-fn parse_projection(attr: &Attribute) -> syn::Result<ProjectionType> {
-    let mut projection = None::<ProjectionType>;
-    attr.parse_nested_meta(|meta| {
-        if meta.path.is_ident("alias") {
-            let value = meta.value()?;
-            let alias = value.parse::<LitStr>()?.value();
-            if alias.is_empty() {
-                return Err(meta.error("Expected non-empty alias"));
-            }
-            projection = Some(ProjectionType::Alias(alias));
-        } else if meta.path.is_ident("exp") {
-            let value = meta.value()?;
-            let edgedb_expression = value.parse::<LitStr>()?.value();
-            if edgedb_expression.is_empty() {
-                return Err(meta.error("Expected non-empty expression"));
-            }
-            projection = Some(ProjectionType::Expression(edgedb_expression));
-        } else {
-            return Err(meta.error("Expected alias or exp identifier"));
-        }
-        Ok(())
-    })?;
-    Ok(projection.unwrap())
-}
-
 fn derive_projection(input: DeriveInput) -> proc_macro2::TokenStream {
     let Data::Struct(data_struct) = input.data else {
         panic!("Project macro only applicable to structs");
@@ -89,20 +66,58 @@ fn derive_projection(input: DeriveInput) -> proc_macro2::TokenStream {
         let mut projection_type = None::<ProjectionType>;
         let mut nested = false;
         for attr in &field.attrs {
-            if attr.path().is_ident("project") {
-                if projection_type.is_some() {
-                    panic!("Multiple projections on field {}", field_name);
+            if !attr.path().is_ident("project") {
+                continue;
+            }
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("alias") {
+                    if projection_type.is_some() {
+                        return Err(meta.error("Only one of `alias` or `exp` attributes allowed"));
+                    }
+                    let value = meta.value()?;
+                    let alias = value.parse::<LitStr>()?.value();
+                    if alias.is_empty() {
+                        return Err(meta.error("Expected non-empty alias"));
+                    }
+                    projection_type = Some(ProjectionType::Alias(alias));
+                } else if meta.path.is_ident("exp") {
+                    if projection_type.is_some() {
+                        return Err(meta.error("Only one of `alias` or `exp` attributes allowed"));
+                    }
+                    let value = meta.value()?;
+                    let edgedb_expression = value.parse::<LitStr>()?.value();
+                    if edgedb_expression.is_empty() {
+                        return Err(meta.error("Expected non-empty expression"));
+                    }
+                    projection_type = Some(ProjectionType::Expression(edgedb_expression));
+                } else if meta.path.is_ident("nested") {
+                    nested = true;
+                } else {
+                    return Err(meta.error("Unknown attribute"));
                 }
-                projection_type = Some(parse_projection(attr).unwrap());
-            }
-            if attr.path().is_ident("nested") {
-                nested = true;
-            }
+                Ok(())
+            })
+            .unwrap();
         }
         let mut nested_projection = None::<&syn::Ident>;
         if nested {
             if let syn::Type::Path(ref type_path) = field.ty {
-                nested_projection = Some(&type_path.path.segments.last().unwrap().ident);
+                let segment = &type_path.path.segments.last().unwrap();
+                if segment.ident == "Vec" {
+                    let PathArguments::AngleBracketed(args) = &segment.arguments else {
+                        panic!(
+                            "Expected an inner type for nested field with Vec type: {}",
+                            field_name
+                        );
+                    };
+                    if let Some(GenericArgument::Type(Type::Path(TypePath { path, .. }))) =
+                        args.args.first()
+                    {
+                        nested_projection = Some(&path.segments.last().unwrap().ident);
+                    }
+                } else {
+                    nested_projection = Some(&segment.ident);
+                }
             } else {
                 panic!("Expected syn::Type::Path for nested field {}", field_name);
             }
@@ -123,7 +138,7 @@ fn derive_projection(input: DeriveInput) -> proc_macro2::TokenStream {
     code
 }
 
-#[proc_macro_derive(Project, attributes(project, nested))]
+#[proc_macro_derive(Project, attributes(project))]
 pub fn derive_projection_macro(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     derive_projection(input).into()
@@ -153,9 +168,8 @@ mod test {
                 user_id_value_what_am_i_doing: Uuid,
                 #[project(exp = ".org.name")]
                 org_name: String,
-                #[nested]
-                #[project(alias = "org")]
-                organization: Organization,
+                #[project(alias = "org", nested)]
+                organizations: Vec<Organization>,
             }
         };
 
