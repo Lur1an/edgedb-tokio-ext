@@ -9,8 +9,10 @@ proc-macro = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+lazy_static = "1.4.0"
 proc-macro2 = "1.0.81"
 quote = "1.0.36"
+regex = "1.10.4"
 syn = "2.0.60"
 
 [dev-dependencies]

@@ -1,7 +1,10 @@
 extern crate proc_macro;
 
+use lazy_static::lazy_static;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
+use regex::Regex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use syn::{
     parse_macro_input, Data, DeriveInput, GenericArgument, LitStr, PathArguments, Type, TypePath,
 };
@@ -103,10 +106,10 @@ fn derive_projection(input: DeriveInput) -> proc_macro2::TokenStream {
         if nested {
             if let syn::Type::Path(ref type_path) = field.ty {
                 let segment = &type_path.path.segments.last().unwrap();
-                if segment.ident == "Vec" {
+                if segment.ident == "Vec" || segment.ident == "Option" {
                     let PathArguments::AngleBracketed(args) = &segment.arguments else {
                         panic!(
-                            "Expected an inner type for nested field with Vec type: {}",
+                            "Expected an inner type for nested field with Vec or Option type: {}",
                             field_name
                         );
                     };
@@ -144,13 +147,39 @@ pub fn derive_projection_macro(input: TokenStream) -> TokenStream {
     derive_projection(input).into()
 }
 
+fn derive_query_projection(input: LitStr) -> proc_macro2::TokenStream {
+    lazy_static! {
+        static ref COUNTER: AtomicUsize = AtomicUsize::new(0);
+        static ref PROJECT_REGEX: Regex = Regex::new(r"project::(\S+)").unwrap();
+    }
+    let mut replacements = vec![];
+    for projection in PROJECT_REGEX.captures_iter(&input.value()) {
+        let string_match = projection.get(0).unwrap().as_str();
+        let projection_entity_name = projection.get(1).unwrap().as_str().to_owned();
+        let projection_entity_type =
+            syn::Ident::new(&projection_entity_name, proc_macro2::Span::call_site());
+        replacements.push(quote! {
+            .replace(#string_match, #projection_entity_type::project())
+        });
+    }
+    let query_num = COUNTER.fetch_add(1, Ordering::Relaxed);
+    let query_const_name = format!("__QUERY_{}", query_num);
+    let query_const_ident = syn::Ident::new(&query_const_name, proc_macro2::Span::call_site());
+    let code = quote! {
+        {
+            static #query_const_ident: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+            #query_const_ident.get_or_init(|| {
+                #input #(#replacements)*
+            })
+        }
+    };
+    code
+}
+
 #[proc_macro]
 pub fn query_project(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as LitStr);
-    let query = quote! {
-        "Deez nuts in ya mouf"
-    };
-    query.into()
+    derive_query_projection(input).into()
 }
 
 #[cfg(test)]
@@ -168,6 +197,8 @@ mod test {
                 user_id_value_what_am_i_doing: Uuid,
                 #[project(exp = ".org.name")]
                 org_name: String,
+                #[project(nested)]
+                manager: User,
                 #[project(alias = "org", nested)]
                 organizations: Vec<Organization>,
             }
@@ -175,6 +206,16 @@ mod test {
 
         let derive_input: DeriveInput = syn::parse2(input).unwrap();
         let output = derive_projection(derive_input);
+        println!("{}", output);
+    }
+
+    #[test]
+    fn test_query_projection() {
+        let input = quote! {
+            "select User { project::User }"
+        };
+        let derive_input: LitStr = syn::parse2(input).unwrap();
+        let output = derive_query_projection(derive_input);
         println!("{}", output);
     }
 }

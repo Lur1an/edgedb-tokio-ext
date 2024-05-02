@@ -1,6 +1,6 @@
 module default {
   type User {
-    required name: str;
+    required name: tuple<first: str, last: str>;
     required age: int64 {
       constraint min_value(1);
     }
