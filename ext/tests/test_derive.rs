@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
 use edgedb_derive::Queryable;
-use edgedb_tokio_ext_derive::{query_project, Project};
+use edgedb_tokio_ext::{query_project, Project};
 use uuid::Uuid;
 
-#[derive(Project, Queryable)]
+#[derive(Project, Queryable, Debug)]
 struct User {
     id: Uuid,
     #[project(exp = ".name.first")]
@@ -17,7 +17,7 @@ struct User {
     organization: Option<Organization>,
 }
 
-#[derive(Project, Queryable)]
+#[derive(Project, Queryable, Debug)]
 struct Organization {
     id: Uuid,
     name: String,
@@ -29,14 +29,17 @@ async fn test_derive_project() {
     let query = query_project!(
         "
         with
+            org := (insert Organization {
+                name := 'Edgedb'
+            }),
             user := (insert User {
-                name := { first := 'Lurian', last := 'Warlock'},
-                age := 26
+                name := (first := 'Lurian', last := 'Warlock'),
+                age := 26,
+                org := org
             })
         select user { project::User }
     "
     );
-    println!("{}", query);
     let user = edgedb_client
         .query_required_single::<User, _>(query, &())
         .await

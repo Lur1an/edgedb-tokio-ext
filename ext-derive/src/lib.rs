@@ -193,8 +193,6 @@ mod test {
         let input = quote! {
             struct User {
                 id: Uuid,
-                #[project(alias = "id")]
-                user_id_value_what_am_i_doing: Uuid,
                 #[project(exp = ".org.name")]
                 org_name: String,
                 #[project(nested)]
@@ -205,17 +203,7 @@ mod test {
         };
 
         let derive_input: DeriveInput = syn::parse2(input).unwrap();
-        let output = derive_projection(derive_input);
-        println!("{}", output);
-    }
-
-    #[test]
-    fn test_query_projection() {
-        let input = quote! {
-            "select User { project::User }"
-        };
-        let derive_input: LitStr = syn::parse2(input).unwrap();
-        let output = derive_query_projection(derive_input);
-        println!("{}", output);
+        let output = derive_projection(derive_input).to_string();
+        assert!(output.contains("id, "));
     }
 }
