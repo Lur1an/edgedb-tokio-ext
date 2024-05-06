@@ -1,23 +1,23 @@
 #![allow(dead_code)]
 
 use edgedb_derive::Queryable;
-use edgedb_tokio_ext::{query_project, Project};
+use edgedb_tokio_ext::{shaped_query, Shape};
 use uuid::Uuid;
 
-#[derive(Project, Queryable, Debug)]
+#[derive(Shape, Queryable, Debug)]
 struct User {
     id: Uuid,
-    #[project(exp = ".name.first")]
+    #[shape(exp = ".name.first")]
     first_name: String,
-    #[project(exp = ".name.last")]
+    #[shape(exp = ".name.last")]
     last_name: String,
-    #[project(alias = "age")]
+    #[shape(alias = "age")]
     age_value: i64,
-    #[project(alias = "org", nested)]
+    #[shape(alias = "org", nested)]
     organization: Option<Organization>,
 }
 
-#[derive(Project, Queryable, Debug)]
+#[derive(Shape, Queryable, Debug)]
 struct Organization {
     id: Uuid,
     name: String,
@@ -26,7 +26,7 @@ struct Organization {
 #[tokio::test]
 async fn test_derive_project() {
     let edgedb_client = edgedb_tokio::create_client().await.unwrap();
-    let query = query_project!(
+    let query = shaped_query!(
         "
         with
             org := (insert Organization {
@@ -37,7 +37,7 @@ async fn test_derive_project() {
                 age := 26,
                 org := org
             })
-        select user { project::User }
+        select user { shape::User }
     "
     );
     let user = edgedb_client

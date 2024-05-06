@@ -30,7 +30,7 @@ impl<'a> ToTokens for Projection<'a> {
                 if let Some(t) = self.nested_projection_type {
                     let left = format!("{} := .{}", self.field_name, self.field_name);
                     quote! {
-                        const_format::concatcp!(#left, " { ", #t::project(), " }, ")
+                        const_format::concatcp!(#left, " { ", #t::shape(), " }, ")
                     }
                     .to_tokens(tokens);
                 } else {
@@ -46,7 +46,7 @@ impl<'a> ToTokens for Projection<'a> {
                 if let Some(t) = self.nested_projection_type {
                     let left = format!("{} := .{}", self.field_name, alias);
                     quote! {
-                        const_format::concatcp!(#left, " { ", #t::project(), " }, ")
+                        const_format::concatcp!(#left, " { ", #t::shape(), " }, ")
                     }
                     .to_tokens(tokens);
                 } else {
@@ -58,7 +58,7 @@ impl<'a> ToTokens for Projection<'a> {
     }
 }
 
-fn derive_projection(input: DeriveInput) -> proc_macro2::TokenStream {
+fn derive_shape(input: DeriveInput) -> proc_macro2::TokenStream {
     let Data::Struct(data_struct) = input.data else {
         panic!("Project macro only applicable to structs");
     };
@@ -69,7 +69,7 @@ fn derive_projection(input: DeriveInput) -> proc_macro2::TokenStream {
         let mut projection_type = None::<ProjectionType>;
         let mut nested = false;
         for attr in &field.attrs {
-            if !attr.path().is_ident("project") {
+            if !attr.path().is_ident("shape") {
                 continue;
             }
             attr.parse_nested_meta(|meta| {
@@ -133,7 +133,7 @@ fn derive_projection(input: DeriveInput) -> proc_macro2::TokenStream {
     }
     let code = quote! {
         impl #name {
-            const fn project() -> &'static str {
+            const fn shape() -> &'static str {
                 const_format::concatcp!(#(#projections),*)
             }
         }
@@ -141,16 +141,16 @@ fn derive_projection(input: DeriveInput) -> proc_macro2::TokenStream {
     code
 }
 
-#[proc_macro_derive(Project, attributes(project))]
-pub fn derive_projection_macro(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(Shape, attributes(shape))]
+pub fn derive_shape_macro(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    derive_projection(input).into()
+    derive_shape(input).into()
 }
 
-fn derive_query_projection(input: LitStr) -> proc_macro2::TokenStream {
+fn derive_shaped_query(input: LitStr) -> proc_macro2::TokenStream {
     lazy_static! {
         static ref COUNTER: AtomicUsize = AtomicUsize::new(0);
-        static ref PROJECT_REGEX: Regex = Regex::new(r"project::(\S+)").unwrap();
+        static ref PROJECT_REGEX: Regex = Regex::new(r"shape::(\S+)").unwrap();
     }
     let mut replacements = vec![];
     for projection in PROJECT_REGEX.captures_iter(&input.value()) {
@@ -159,7 +159,7 @@ fn derive_query_projection(input: LitStr) -> proc_macro2::TokenStream {
         let projection_entity_type =
             syn::Ident::new(&projection_entity_name, proc_macro2::Span::call_site());
         replacements.push(quote! {
-            .replace(#string_match, #projection_entity_type::project())
+            .replace(#string_match, #projection_entity_type::shape())
         });
     }
     let query_num = COUNTER.fetch_add(1, Ordering::Relaxed);
@@ -177,9 +177,9 @@ fn derive_query_projection(input: LitStr) -> proc_macro2::TokenStream {
 }
 
 #[proc_macro]
-pub fn query_project(input: TokenStream) -> TokenStream {
+pub fn shaped_query(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as LitStr);
-    derive_query_projection(input).into()
+    derive_shaped_query(input).into()
 }
 
 #[cfg(test)]
@@ -193,17 +193,17 @@ mod test {
         let input = quote! {
             struct User {
                 id: Uuid,
-                #[project(exp = ".org.name")]
+                #[shape(exp = ".org.name")]
                 org_name: String,
-                #[project(nested)]
+                #[shape(nested)]
                 manager: User,
-                #[project(alias = "org", nested)]
+                #[shape(alias = "org", nested)]
                 organizations: Vec<Organization>,
             }
         };
 
         let derive_input: DeriveInput = syn::parse2(input).unwrap();
-        let output = derive_projection(derive_input).to_string();
+        let output = derive_shape(derive_input).to_string();
         assert!(output.contains("id, "));
     }
 }
