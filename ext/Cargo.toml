@@ -18,4 +18,4 @@ const_format = "0.2.32"
 
 [dev-dependencies]
 tokio = { version = "1.37.0", features = ["full"] }
-uuid = { version = "1.8.0", features = ["v4"] }
+uuid = { version = "1.8.0", features = ["v4", "serde"] }
