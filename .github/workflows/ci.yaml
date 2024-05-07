@@ -61,8 +61,8 @@ jobs:
         env:
           EDGEDB_HOST: localhost 
           EDGEDB_PORT: 5656
-          EDGEDB_CLIENT_USER: edgedb
-          EDGEDB_CLIENT_PASSWORD: edgedb
+          EDGEDB_USER: edgedb
+          EDGEDB_PASSWORD: edgedb
           EDGEDB_CLIENT_TLS_SECURITY: insecure
 
         run: cargo test --verbose -- --nocapture
