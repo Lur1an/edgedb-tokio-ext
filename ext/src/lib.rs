@@ -1,3 +1,4 @@
+pub mod devtools;
 mod serde_ext;
 
 extern crate const_format;
