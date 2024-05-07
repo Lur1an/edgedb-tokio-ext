@@ -53,6 +53,18 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+
+      - name: Start EdgeDB
+        run: docker compose up -d
     
       - name: Run tests
+        env:
+          EDGEDB_HOST: localhost 
+          EDGEDB_PORT: 5656
+          EDGEDB_SERVER_SECURITY: insecure_dev_mode
+
+        run: cargo test --verbose -- --nocapture
+
+      - name: Test server
+        working-directory: ./backend/server
         run: cargo test --verbose -- --nocapture
