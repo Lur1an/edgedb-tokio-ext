@@ -61,7 +61,7 @@ jobs:
         env:
           EDGEDB_HOST: localhost 
           EDGEDB_PORT: 5656
-          EDGEDB_SERVER_SECURITY: insecure_dev_mode
+          EDGEDB_CLIENT_TLS_SECURITY: insecure
 
         run: cargo test --verbose -- --nocapture
 

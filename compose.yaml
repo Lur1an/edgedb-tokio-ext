@@ -3,6 +3,8 @@ services:
     image: edgedb/edgedb:latest
     environment:
       EDGEDB_SERVER_SECURITY: insecure_dev_mode
+      EDGEDB_SERVER_PASSWORD: edgedb
+      EDGEDB_SERVER_USER: edgedb
     volumes:
       - "./dbschema:/dbschema"
     ports:
