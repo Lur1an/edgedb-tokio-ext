@@ -1,6 +1,6 @@
 [package]
 name = "edgedb-tokio-ext"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 authors = ["lur1an <lurian-code@protonmail.com>"]
@@ -18,7 +18,7 @@ edgedb-protocol = "0.6.0"
 edgedb-tokio = "0.5.0"
 serde = "1.0.199"
 serde_json = "1.0.116"
-edgedb-tokio-ext-derive = { version = "0.1.0" }
+edgedb-tokio-ext-derive = { version = "0.1.1" }
 const_format = "0.2.32"
 
 [dev-dependencies]
