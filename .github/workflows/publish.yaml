@@ -20,9 +20,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Publish edgedb-tokio-ext-derive crate
-        working-directory: ./edgedb-tokio-ext-derive
+        working-directory: ./ext-derive
         run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
 
       - name: Publish edgedb-tokio-ext crate
-        working-directory: ./edgedb-tokio-ext
+        working-directory: ./ext
         run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
