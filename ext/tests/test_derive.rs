@@ -2,6 +2,7 @@
 
 use edgedb_derive::Queryable;
 use edgedb_tokio_ext::{shaped_query, Shape};
+use edgedb_tokio_ext_derive::tx_variant;
 use uuid::Uuid;
 
 #[derive(Shape, Queryable, Debug)]
@@ -21,6 +22,12 @@ struct User {
 struct Organization {
     id: Uuid,
     name: String,
+}
+
+#[tx_variant]
+async fn sample_db_function(id: &Uuid, client: &edgedb_tokio::Client) {
+    client.query_required_single_json("", &(id,)).await.unwrap();
+    todo!()
 }
 
 #[tokio::test]
