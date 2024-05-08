@@ -1,0 +1,28 @@
+name: publish
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Publish edgedb-tokio-ext-derive crate
+        working-directory: ./edgedb-tokio-ext-derive
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: Publish edgedb-tokio-ext crate
+        working-directory: ./edgedb-tokio-ext
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}

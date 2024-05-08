@@ -2,6 +2,11 @@
 name = "edgedb-tokio-ext"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+authors = ["lur1an <lurian-code@protonmail.com>"]
+description = "Derive macros for edgedb-tokio-ext"
+readme = "../README.md"
+repository = "https://github.com/lur1an/edgedb-tokio-ext"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,7 +18,7 @@ edgedb-protocol = "0.6.0"
 edgedb-tokio = "0.5.0"
 serde = "1.0.199"
 serde_json = "1.0.116"
-edgedb-tokio-ext-derive = { path = "../ext-derive" }
+edgedb-tokio-ext-derive = { version = "0.1.0" }
 const_format = "0.2.32"
 
 [dev-dependencies]

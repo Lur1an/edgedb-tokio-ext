@@ -2,6 +2,11 @@
 name = "edgedb-tokio-ext-derive"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+authors = ["lur1an <lurian-code@protonmail.com>"]
+description = "Derive macros for edgedb-tokio-ext"
+readme = "../README.md"
+repository = "https://github.com/lur1an/edgedb-tokio-ext"
 
 [lib]
 proc-macro = true
@@ -13,7 +18,7 @@ lazy_static = "1.4.0"
 proc-macro2 = "1.0.81"
 quote = "1.0.36"
 regex = "1.10.4"
-syn = "2.0.60"
+syn = { version = "2.0.60", features = ["full"] }
 
 [dev-dependencies]
 syn = { version = "2.0.60", features = ["extra-traits"]}
