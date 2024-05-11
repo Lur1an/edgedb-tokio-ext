@@ -11,8 +11,8 @@ pub fn derive_tx_variant(mut func: ItemFn) -> proc_macro2::TokenStream {
     // Change the argument type
     for arg in func.sig.inputs.iter_mut() {
         if let syn::FnArg::Typed(pat_type) = arg {
-            if let syn::Type::Reference(type_ref) = &*pat_type.ty {
-                if let syn::Type::Path(type_path) = &*type_ref.elem {
+            if let syn::Type::Reference(type_ref) = pat_type.ty.as_ref() {
+                if let syn::Type::Path(type_path) = type_ref.elem.as_ref() {
                     // Check both "Client" and "edgedb_tokio::Client"
                     let is_client = type_path.path.is_ident("Client")
                         || type_path.path.segments.last().map_or(false, |segment| {

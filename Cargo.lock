@@ -314,7 +314,7 @@ dependencies = [
 
 [[package]]
 name = "edgedb-tokio-ext"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "const_format",
@@ -322,7 +322,7 @@ dependencies = [
  "edgedb-errors",
  "edgedb-protocol",
  "edgedb-tokio",
- "edgedb-tokio-ext-derive 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "edgedb-tokio-ext-derive 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_json",
  "tokio",
@@ -331,7 +331,7 @@ dependencies = [
 
 [[package]]
 name = "edgedb-tokio-ext-derive"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "lazy_static",
  "proc-macro2",
@@ -342,9 +342,9 @@ dependencies = [
 
 [[package]]
 name = "edgedb-tokio-ext-derive"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c202d75607f4e1caa6e2eacefc0d3fbf4d210fa3f91ef1f3ad3de29906eb58e9"
+checksum = "ea44030cfc73360f60abeb107b4fd1a88496c61b10ce13d0fbb4f52828106fa3"
 dependencies = [
  "lazy_static",
  "proc-macro2",
