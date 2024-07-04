@@ -27,7 +27,7 @@ impl<'a> ToTokens for Projection<'a> {
                 if let Some(t) = self.nested_projection_type {
                     let left = format!("{} := .{}", self.field_name, self.field_name);
                     quote! {
-                        edgedb_tokio_ext::const_format::concatcp!(#left, " { ", #t::shape(), " }, ")
+                        const_format::concatcp!(#left, " { ", #t::shape(), " }, ")
                     }
                     .to_tokens(tokens);
                 } else {
@@ -43,7 +43,7 @@ impl<'a> ToTokens for Projection<'a> {
                 if let Some(t) = self.nested_projection_type {
                     let left = format!("{} := .{}", self.field_name, alias);
                     quote! {
-                        edgedb_tokio_ext::const_format::concatcp!(#left, " { ", #t::shape(), " }, ")
+                        const_format::concatcp!(#left, " { ", #t::shape(), " }, ")
                     }
                     .to_tokens(tokens);
                 } else {
@@ -131,7 +131,7 @@ pub fn derive_shape(input: DeriveInput) -> proc_macro2::TokenStream {
     let code = quote! {
         impl #name {
             const fn shape() -> &'static str {
-                edgedb_tokio_ext::const_format::concatcp!(#(#projections),*)
+                const_format::concatcp!(#(#projections),*)
             }
         }
     };
