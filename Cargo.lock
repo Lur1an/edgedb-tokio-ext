@@ -314,7 +314,7 @@ dependencies = [
 
 [[package]]
 name = "edgedb-tokio-ext"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "async-trait",
  "const_format",
@@ -344,7 +344,7 @@ dependencies = [
 
 [[package]]
 name = "edgedb-tokio-ext-derive"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "lazy_static",
  "proc-macro2",
